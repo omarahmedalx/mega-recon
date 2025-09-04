@@ -45,6 +45,7 @@ On Arch Linux: sudo pacman -S amass subfinder nmap go git jq wget curl
 On Debian/Ubuntu: sudo apt update && sudo apt install -y amass nmap git jq wget curl
 
 Install Go-based tools:
+' ' ' bash
 
 go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
@@ -52,6 +53,7 @@ go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 go install -v github.com/ffuf/ffuf@latest
 go install -v github.com/tomnomnom/waybackurls@latest
 go install -v github.com/sensepost/gowitness@latest
+' ' ' bash
 
 Usage
 Basic run against a target:
