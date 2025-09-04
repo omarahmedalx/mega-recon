@@ -1,0 +1,111 @@
+#!/bin/bash
+# Mega Recon Toolkit (clean version)
+# Usage: mega-recon target.com
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 domain.com"
+    exit 1
+fi
+
+DOMAIN=$1
+OUTPUT_DIR="${DOMAIN}_recon"
+
+mkdir -p "$OUTPUT_DIR"/{subdomains,perms,ips,alive,urls,files,scans,screens}
+
+echo "[*] Starting recon for $DOMAIN"
+echo "[*] Results saved under $OUTPUT_DIR"
+
+#######################################
+# 1. Subdomain Enumeration
+#######################################
+echo "[*] Running subfinder..."
+subfinder -d $DOMAIN -all -silent -o $OUTPUT_DIR/subdomains/subfinder.txt
+
+echo "[*] Running assetfinder..."
+assetfinder --subs-only $DOMAIN > $OUTPUT_DIR/subdomains/assetfinder.txt
+
+echo "[*] Running findomain..."
+findomain -t $DOMAIN -q > $OUTPUT_DIR/subdomains/findomain.txt
+
+echo "[*] Running amass (passive)..."
+amass enum -passive -d $DOMAIN -o $OUTPUT_DIR/subdomains/amass_passive.txt
+
+echo "[*] Running amass (active)..."
+amass enum -active -d $DOMAIN -o $OUTPUT_DIR/subdomains/amass_active.txt
+
+echo "[*] Fetching crt.sh..."
+curl -s "https://crt.sh/?q=${DOMAIN}&output=json" | jq -r '.[].name_value' \
+    | sed 's/\*\.//g' | sort -u > $OUTPUT_DIR/subdomains/crtsh.txt
+
+echo "[*] Fetching Wayback Machine..."
+curl -s "http://web.archive.org/cdx/search/cdx?url=*.${DOMAIN}/*&output=text&fl=original&collapse=urlkey" \
+    | sed -e 's_https*://__' -e "s/\/.*//" -e 's/:.*//' -e 's/^www\.//' \
+    | sort -u > $OUTPUT_DIR/subdomains/wayback.txt
+
+echo "[*] Combining all subdomains..."
+cat $OUTPUT_DIR/subdomains/*.txt | sort -u > $OUTPUT_DIR/subdomains/all.txt
+
+#######################################
+# 2. Subdomain Permutations + DNS Resolution
+#######################################
+echo "[*] Generating permutations..."
+cat $OUTPUT_DIR/subdomains/all.txt | alterx | dnsx -silent > $OUTPUT_DIR/perms/permuted.txt
+sort -u $OUTPUT_DIR/perms/permuted.txt -o $OUTPUT_DIR/perms/permuted.txt
+
+#######################################
+# 3. Live Hosts
+#######################################
+echo "[*] Checking live subdomains..."
+cat $OUTPUT_DIR/subdomains/all.txt $OUTPUT_DIR/perms/permuted.txt | sort -u \
+    | httpx-toolkit -silent -o $OUTPUT_DIR/alive/live.txt
+
+#######################################
+# 4. Visual Recon
+#######################################
+echo "[*] Running Aquatone screenshots..."
+cat $OUTPUT_DIR/alive/live.txt | aquatone -ports 80,443,8080,8443 -out $OUTPUT_DIR/screens
+
+#######################################
+# 5. URL Collection
+#######################################
+echo "[*] Collecting URLs..."
+katana -u $OUTPUT_DIR/alive/live.txt -d 2 -o $OUTPUT_DIR/urls/katana.txt
+cat $OUTPUT_DIR/alive/live.txt | gau > $OUTPUT_DIR/urls/gau.txt
+urlfinder -d $DOMAIN > $OUTPUT_DIR/urls/urlfinder.txt
+
+cat $OUTPUT_DIR/urls/*.txt | sort -u > $OUTPUT_DIR/urls/all.txt
+
+#######################################
+# 6. Parameter Extraction
+#######################################
+echo "[*] Extracting params..."
+cat $OUTPUT_DIR/urls/all.txt | grep '=' | sort -u > $OUTPUT_DIR/urls/params.txt
+
+#######################################
+# 7. Sensitive Files
+#######################################
+echo "[*] Searching sensitive files..."
+cat $OUTPUT_DIR/urls/all.txt | grep -E "\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|zip|tar\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|p12|pem|key|crt|csr|sh|pl|py|java|class|jar|war|ear|sqlitedb|sqlite3|dbf|db3|accdb|mdb|sqlcipher|gitignore|env|ini|conf|properties|plist|cfg)$" \
+    | sort -u > $OUTPUT_DIR/files/sensitive.txt
+
+#######################################
+# 8. Nuclei (General Scan)
+#######################################
+echo "[*] Running Nuclei scan with all templates..."
+nuclei -l $OUTPUT_DIR/alive/live.txt \
+    -t ~/nuclei-templates \
+    -o $OUTPUT_DIR/scans/nuclei.txt \
+    -c 50 -bs 50
+
+#######################################
+# Final Summary
+#######################################
+echo "[+] Recon complete!"
+echo "    Subdomains:   $OUTPUT_DIR/subdomains/all.txt"
+echo "    Permutations: $OUTPUT_DIR/perms/permuted.txt"
+echo "    Live hosts:   $OUTPUT_DIR/alive/live.txt"
+echo "    URLs:         $OUTPUT_DIR/urls/all.txt"
+echo "    Params:       $OUTPUT_DIR/urls/params.txt"
+echo "    Sensitive:    $OUTPUT_DIR/files/sensitive.txt"
+echo "    Nuclei scan:  $OUTPUT_DIR/scans/nuclei.txt"
+echo "    Screenshots:  $OUTPUT_DIR/screens/"
