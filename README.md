@@ -40,9 +40,11 @@ chmod +x mega-recon
 
 Install dependencies
 
-On Arch Linux: sudo pacman -S amass subfinder nmap go git jq wget curl
+On Arch Linux:
+<pre>sudo pacman -S amass subfinder nmap go git jq wget curl </pre>
 
-On Debian/Ubuntu: sudo apt update && sudo apt install -y amass nmap git jq wget curl
+On Debian/Ubuntu: 
+<pre>sudo apt update && sudo apt install -y amass nmap git jq wget curl </pre>
 
 Install Go-based tools:
 <pre>
