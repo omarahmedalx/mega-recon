@@ -73,7 +73,7 @@ Basic run against a target:
 <pre>./mega-recon example.com </pre>
 
 Run with specific modules only:
-<pre>./mega-recon -d example.com --subdomains --ports --dirs</pre>
+<pre>./mega-recon  example.com --subdomains --ports --dirs</pre>
 
 
 
