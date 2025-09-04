@@ -1,5 +1,5 @@
 #!/bin/bash
-# Mega Recon Toolkit (clean version)
+# Mega Recon By Omar_ahmed
 # Usage: mega-recon target.com
 
 if [ -z "$1" ]; then
