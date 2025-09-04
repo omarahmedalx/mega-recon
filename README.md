@@ -31,11 +31,11 @@ Features
 
 
 📥 Installation
-
+<pre>
 git clone https://github.com/omarahmedalx/mega-recon
 cd mega-recon
 chmod +x mega-recon
-
+</pre>
 
 
 Install dependencies
@@ -45,7 +45,7 @@ On Arch Linux: sudo pacman -S amass subfinder nmap go git jq wget curl
 On Debian/Ubuntu: sudo apt update && sudo apt install -y amass nmap git jq wget curl
 
 Install Go-based tools:
-<pre> ```bash
+<pre>
 # Install subfinder
 go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 
@@ -63,15 +63,15 @@ go install -v github.com/tomnomnom/waybackurls@latest
 
 # Install gowitness
 go install -v github.com/sensepost/gowitness@latest
-``` </pre>
+ </pre>
 
 Usage
 Basic run against a target:
 
-./mega-recon example.com
+<pre>./mega-recon example.com </pre>
 
 Run with specific modules only:
-./mega-recon -d example.com --subdomains --ports --dirs
+<pre>./mega-recon -d example.com --subdomains --ports --dirs</pre>
 
 
 
